@@ -2,8 +2,6 @@
 
 import numpy as np
 import gym
-import cv2
-from framebuffer import FrameBuffer
 
 
 class MaxAndSkipEnv(gym.Wrapper):
@@ -119,62 +117,3 @@ class AntiTorchWrapper(gym.ObservationWrapper):
         """what happens to each observation"""
         img = img.transpose(1, 2, 0)
         return img
-
-
-class PreprocessAtariObs(gym.ObservationWrapper):
-    def __init__(self, env):
-        """A gym wrapper that crops, scales image into the desired shapes and grayscales it."""
-        gym.ObservationWrapper.__init__(self, env)
-
-        self.img_size = (1, 64, 64)
-        self.observation_space = gym.spaces.Box(0.0, 1.0, self.img_size)
-
-    def _to_gray_scale(self, rgb, channel_weights=[0.8, 0.1, 0.1]):
-        return (rgb * np.array(channel_weights).reshape(1, 1, -1)).sum(2)
-    
-    def _crop_image(self, img):
-        #hardcoded indices
-        return img[30:195, 6:-6]
-
-    def observation(self, img):
-        """what happens to each observation"""
-        obs = self._to_gray_scale(img)
-        obs = self._crop_image(obs)
-        obs = cv2.resize(obs, dsize = (64, 64))[np.newaxis, ...]
-        return (obs / 256).astype(np.float32)
-
-
-def PrimaryAtariWrap(env, clip_rewards=True):
-    assert 'NoFrameskip' in env.spec.id
-
-    # This wrapper holds the same action for <skip> frames and outputs
-    # the maximal pixel value of 2 last frames (to handle blinking
-    # in some envs)
-    env = MaxAndSkipEnv(env, skip=4)
-
-    # This wrapper sends done=True when each life is lost
-    # (not all the 5 lives that are givern by the game rules).
-    # It should make easier for the agent to understand that losing is bad.
-    env = EpisodicLifeEnv(env)
-
-    # This wrapper laucnhes the ball when an episode starts.
-    # Without it the agent has to learn this action, too.
-    # Actually it can but learning would take longer.
-    env = FireResetEnv(env)
-
-    # This wrapper transforms rewards to {-1, 0, 1} according to their sign
-    if clip_rewards:
-        env = ClipRewardEnv(env)
-
-    # This wrapper is yours :)
-    env = PreprocessAtariObs(env)
-    return env
-
-
-def make_env(env_name="BreakoutNoFrameskip-v4", clip_rewards=True, seed=None):
-    env = gym.make(env_name)  # create raw env
-    if seed is not None:
-        env.seed(seed)
-    env = PrimaryAtariWrap(env, clip_rewards)
-    env = FrameBuffer(env, n_frames=4, dim_order='pytorch')
-    return env
