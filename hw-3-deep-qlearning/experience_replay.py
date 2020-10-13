@@ -65,10 +65,10 @@ class ReplayBuffer(object):
         
         return state, actions, rewards, next_states, is_done
     
-def make_experience_replay(env, agent, size=10**4, check_RAM_steps=100):
+def make_experience_replay(env, agent, init_size=10**4, size=10**4, check_RAM_steps=100):
     state = env.reset()
     exp_replay = ReplayBuffer(size)
-    for i in range(int(size // check_RAM_steps)):
+    for i in range(int(init_size // check_RAM_steps)):
         if not utils.is_enough_ram(min_available_gb=0.1):
             print("""
                 Less than 100 Mb RAM available. 

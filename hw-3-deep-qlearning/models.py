@@ -13,18 +13,18 @@ class DQNAgent(nn.Module):
         
         n_frames, current_w, current_h = state_shape
         self.network = nn.Sequential()
-        self.network.add_module('conv_1', nn.Conv2d(in_channels = n_frames, out_channels = 16,
-                                                    kernel_size = 3, stride = 2))
+        self.network.add_module('conv_1', nn.Conv2d(in_channels = n_frames, out_channels = 32,
+                                                    kernel_size = 8, stride = 4))
         self.network.add_module('relu_1', nn.ReLU())
-        current_w, current_h = conv2d_size_out(current_w, 3, 2), conv2d_size_out(current_h, 3, 2)
-        self.network.add_module('conv_2', nn.Conv2d(in_channels = 16, out_channels = 32,
-                                                    kernel_size = 3, stride = 2))
+        current_w, current_h = conv2d_size_out(current_w, 8, 4), conv2d_size_out(current_h, 8, 4)
+        self.network.add_module('conv_2', nn.Conv2d(in_channels = 32, out_channels = 64,
+                                                    kernel_size = 4, stride = 2))
         self.network.add_module('relu_2', nn.ReLU())
-        current_w, current_h = conv2d_size_out(current_w, 3, 2), conv2d_size_out(current_h, 3, 2)
-        self.network.add_module('conv_3', nn.Conv2d(in_channels = 32, out_channels = 64,
-                                                    kernel_size = 3, stride = 2))
+        current_w, current_h = conv2d_size_out(current_w, 4, 2), conv2d_size_out(current_h, 4, 2)
+        self.network.add_module('conv_3', nn.Conv2d(in_channels = 64, out_channels = 64,
+                                                    kernel_size = 3, stride = 1))
         self.network.add_module('relu_3', nn.ReLU())
-        current_w, current_h = conv2d_size_out(current_w, 3, 2), conv2d_size_out(current_h, 3, 2)
+        current_w, current_h = conv2d_size_out(current_w, 3, 1), conv2d_size_out(current_h, 3, 1)
         
         self.linear = nn.Sequential()
         self.linear.add_module('linear_1', nn.Linear(64 * current_h * current_w, 256))
@@ -78,28 +78,28 @@ class DuelingDQNAgent(nn.Module):
         
         n_frames, current_w, current_h = state_shape
         self.network = nn.Sequential()
-        self.network.add_module('conv_1', nn.Conv2d(in_channels = n_frames, out_channels = 16,
-                                                    kernel_size = 3, stride = 2))
+        self.network.add_module('conv_1', nn.Conv2d(in_channels = n_frames, out_channels = 32,
+                                                    kernel_size = 8, stride = 4))
         self.network.add_module('relu_1', nn.ReLU())
-        current_w, current_h = conv2d_size_out(current_w, 3, 2), conv2d_size_out(current_h, 3, 2)
-        self.network.add_module('conv_2', nn.Conv2d(in_channels = 16, out_channels = 32,
-                                                    kernel_size = 3, stride = 2))
+        current_w, current_h = conv2d_size_out(current_w, 8, 4), conv2d_size_out(current_h, 8, 4)
+        self.network.add_module('conv_2', nn.Conv2d(in_channels = 32, out_channels = 64,
+                                                    kernel_size = 4, stride = 2))
         self.network.add_module('relu_2', nn.ReLU())
-        current_w, current_h = conv2d_size_out(current_w, 3, 2), conv2d_size_out(current_h, 3, 2)
-        self.network.add_module('conv_3', nn.Conv2d(in_channels = 32, out_channels = 64,
-                                                    kernel_size = 3, stride = 2))
+        current_w, current_h = conv2d_size_out(current_w, 4, 2), conv2d_size_out(current_h, 4, 2)
+        self.network.add_module('conv_3', nn.Conv2d(in_channels = 64, out_channels = 64,
+                                                    kernel_size = 3, stride = 1))
         self.network.add_module('relu_3', nn.ReLU())
-        current_w, current_h = conv2d_size_out(current_w, 3, 2), conv2d_size_out(current_h, 3, 2)
+        current_w, current_h = conv2d_size_out(current_w, 3, 1), conv2d_size_out(current_h, 3, 1)
         
         self.v = nn.Sequential()
-        self.v.add_module('linear_1', nn.Linear(64 * current_h * current_w, 256))
+        self.v.add_module('linear_1', nn.Linear(64 * current_h * current_w, 512))
         self.v.add_module('relu_linear', nn.ReLU())
-        self.v.add_module('linear_2', nn.Linear(256, 1))
+        self.v.add_module('linear_2', nn.Linear(512, 1))
         
         self.adv = nn.Sequential()
-        self.adv.add_module('linear_1', nn.Linear(64 * current_h * current_w, 256))
+        self.adv.add_module('linear_1', nn.Linear(64 * current_h * current_w, 512))
         self.adv.add_module('relu_linear', nn.ReLU())
-        self.adv.add_module('linear_2', nn.Linear(256, self.n_actions))
+        self.adv.add_module('linear_2', nn.Linear(512, self.n_actions))
         
     def forward(self, state_t):
         """

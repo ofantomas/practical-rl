@@ -3,7 +3,7 @@
 import numpy as np
 import gym
 import cv2
-from framebuffer import FrameBuffer
+from framebuffer import FrameBuffer, FrameStack
 
 
 class MaxAndSkipEnv(gym.Wrapper):
@@ -122,11 +122,12 @@ class AntiTorchWrapper(gym.ObservationWrapper):
 
 
 class PreprocessAtariObs(gym.ObservationWrapper):
-    def __init__(self, env):
+    def __init__(self, env, h=64, w=64):
         """A gym wrapper that crops, scales image into the desired shapes and grayscales it."""
         gym.ObservationWrapper.__init__(self, env)
-
-        self.img_size = (1, 64, 64)
+        self.h = h
+        self.w = w
+        self.img_size = (1, h, w)
         self.observation_space = gym.spaces.Box(0.0, 1.0, self.img_size)
 
     def _to_gray_scale(self, rgb, channel_weights=[0.8, 0.1, 0.1]):
@@ -139,12 +140,12 @@ class PreprocessAtariObs(gym.ObservationWrapper):
     def observation(self, img):
         """what happens to each observation"""
         obs = self._to_gray_scale(img)
-        obs = self._crop_image(obs)
-        obs = cv2.resize(obs, dsize = (64, 64))[np.newaxis, ...]
-        return (obs / 256).astype(np.float32)
+        #obs = self._crop_image(obs)
+        obs = cv2.resize(obs, dsize = (self.h, self.w))[np.newaxis, ...]
+        return (obs / 255.0).astype(np.float32)
 
 
-def PrimaryAtariWrap(env, clip_rewards=True):
+def PrimaryAtariWrap(env, h=64, w=64, clip_rewards=True):
     assert 'NoFrameskip' in env.spec.id
 
     # This wrapper holds the same action for <skip> frames and outputs
@@ -167,14 +168,17 @@ def PrimaryAtariWrap(env, clip_rewards=True):
         env = ClipRewardEnv(env)
 
     # This wrapper is yours :)
-    env = PreprocessAtariObs(env)
+    env = PreprocessAtariObs(env, h, w)
     return env
 
 
-def make_env(env_name="BreakoutNoFrameskip-v4", clip_rewards=True, seed=None):
+def make_env(env_name="BreakoutNoFrameskip-v4", h=64, w=64, framebuffer="buffer", clip_rewards=True, seed=None):
     env = gym.make(env_name)  # create raw env
     if seed is not None:
         env.seed(seed)
-    env = PrimaryAtariWrap(env, clip_rewards)
-    env = FrameBuffer(env, n_frames=4, dim_order='pytorch')
+    env = PrimaryAtariWrap(env, h, w, clip_rewards)
+    if framebuffer == "buffer":
+        env = FrameBuffer(env, n_frames=4, dim_order='pytorch')
+    elif framebuffer == "stack":
+        env = FrameStack(env, k=4)
     return env
