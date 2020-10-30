@@ -7,3 +7,8 @@ List of implemented modifications:
 - [Dueling DQN](https://arxiv.org/abs/1511.06581)
 - [Prioritized Experience Replay](https://arxiv.org/abs/1511.05952)
 - [Quantile Regression DQN](https://arxiv.org/pdf/1710.10044.pdf)
+
+```
+double_dqn.ipynb
+```
+Implements Double DQN loss.
