@@ -12,3 +12,7 @@ List of implemented modifications:
 double_dqn.ipynb
 ```
 Implements Double DQN loss.
+```
+dueling_dqn.ipynb
+```
+Implements Dueling DQN architecture with Double DQN loss.
