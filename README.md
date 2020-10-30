@@ -16,3 +16,11 @@ Implements Double DQN loss.
 dueling_dqn.ipynb
 ```
 Implements Dueling DQN architecture with Double DQN loss.
+```
+dueling_dqn_prioritized.ipynb
+```
+Implements Dueling DQN architecture with Double DQN loss and Prioritized Experience Replay.
+```
+double_qr_dqn.ipynb
+```
+Implements Quantile Regression DQN with Double DQN loss.
