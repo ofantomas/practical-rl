@@ -1,4 +1,5 @@
 import numpy as np
+import random
 
 # You can use this implementation of SumTree structure by MorvanZhou
 # to make sampling O(log n)
@@ -55,7 +56,6 @@ class SumTree():
                 else:
                     v -= self.tree[cl_idx]
                     parent_idx = cr_idx
-
         return leaf_idx - (self.capacity - 1)
         
     def __getitem__(self, indices):
@@ -66,7 +66,7 @@ class SumTree():
         return self.tree[0]  # the root is sum of all priorities
 
 class PrioritizedSampler():
-    def __init__(self, size, clip_priorities=1.0, rp_alpha=0.4):
+    def __init__(self, size, clip_priorities=1.0, rp_alpha=0.4, beta=0.2, beta_increment=1e-6):
         """
         Parameters
         ----------
@@ -79,12 +79,14 @@ class PrioritizedSampler():
         """
         self.clip_priorities = clip_priorities
         self.rp_alpha = rp_alpha     
+        self.beta = beta
+        self.beta_increment = beta_increment
         
         self.priorities = SumTree(size)    
 
         # New transitions should be added to replay buffer with max priority
         # (or you can try to compute priority proxy in "play_and_record" code)
-        self.max_priority = 1.0  
+        self.max_priority = 1.0
 
     def sample_indices(self, batch_size):
         '''
@@ -101,13 +103,19 @@ class PrioritizedSampler():
             batch of importance sampling weights
         """
         '''
-        # sample batch_size indices
-        indices = <YOUR CODE>
+        indices = []
+        p_list = []
+        segment = self.priorities.total_p / batch_size
+        for i in range(batch_size):
+            p = random.uniform(i * segment, (i + 1) * segment)
+            indices.append(self.priorities.get_leaf(p))
+            
+        indices = np.array(indices)
+        probs = self.priorities[indices] / self.priorities.total_p
+        self.beta = min(1, self.beta + self.beta_increment)
         
-        priorities = self.priorities[indices]
-        
-        # you can change this to implement bias correction
-        weights = np.ones(batch_size)
+        weights = (self.priorities.capacity * probs) ** (-self.beta)
+        weights /= weights.max()
         return indices, weights
 
     def update_priorities(self, indices, new_priorities):
@@ -120,10 +128,17 @@ class PrioritizedSampler():
         new_priorities: np.array
             new priorities to set
         '''
+        # update priorities
+        if not isinstance(new_priorities, np.ndarray):
+            new_priorities = np.array(new_priorities)
         new_priorities = (new_priorities**self.rp_alpha).clip(min=1e-5, max=self.clip_priorities)
         
-        # update priorities
-        <YOUR CODE>
+        if not isinstance(indices, np.ndarray):
+            self.priorities.update(indices, new_priorities)
+        else:
+            for idx, priority in zip(indices, new_priorities):
+                self.priorities.update(idx, priority)
         
         # update max priority for new transitions
         self.max_priority = max(self.max_priority, new_priorities.max())
+        

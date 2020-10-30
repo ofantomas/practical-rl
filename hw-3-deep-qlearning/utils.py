@@ -91,6 +91,34 @@ def play_and_record(initial_state, agent, env, exp_replay, n_steps=1):
     return sum_rewards, s
 
 
+def play_and_record_PER(initial_state, agent, env, PER, n_steps=1):
+    """
+    Play the game for exactly n steps, record every (s,a,r,s', done) to replay buffer. 
+    Whenever game ends, add record with done=True and reset the game.
+    It is guaranteed that env has done=False when passed to this function.
+
+    PLEASE DO NOT RESET ENV UNLESS IT IS "DONE"
+
+    :returns: return sum of rewards over time and the state in which the env stays
+    """
+    s = initial_state
+    sum_rewards = 0
+
+    # Play the game for n_steps as per instructions above
+    for step in range(n_steps):
+        qvalues = agent.get_qvalues([s])
+        action = agent.sample_actions(qvalues)[0]
+        next_s, r, done, _ = env.step(action)
+        sum_rewards += r
+        PER.add(s, action, r, next_s, done, p=PER.sampler.max_priority)
+        if done is True:
+            s = env.reset()
+        else:
+            s = next_s
+
+    return sum_rewards, s
+
+
 def evaluate(env, agent, n_games=1, greedy=False, t_max=10000):
     """ Plays n_games full games. If greedy, picks actions as argmax(qvalues). Returns mean reward. """
     rewards = []
